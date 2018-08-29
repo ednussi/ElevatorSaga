@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Elevator Saga - the elevator programming game</title>
+    <meta charset="UTF-8">
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="font-awesome-4.1-1.0/css/font-awesome.min.css" type="text/css" media="all">
+    <link rel="stylesheet" href="libs/codemirror/codemirror.css">
+    <link rel="stylesheet" href="libs/codemirror/themes/solarized.css">
+    <link rel="stylesheet" href="style.css" type="text/css" media="all">
+
+    <script type="text/javascript" src="libs/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="libs/lodash.min.js"></script>
+    <script type="text/javascript" src="libs/riot.js"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+            tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+            processEscapes: true
+        });
+    </script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML' async></script>
+
+    <script type="text/javascript" src="libs/codemirror/codemirror.js"></script>
+    <script type="text/javascript" src="libs/codemirror/addon/edit/closebrackets.js"></script>
+    <script type="text/javascript" src="libs/codemirror/mode/javascript/javascript.js"></script>
+
+    <script type="text/javascript" src="libs/unobservable.js"></script>
+    <script type="text/javascript" src="libs/plotly-latest.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" src="base.js"></script>
+    <script type="text/javascript" src="movable.js"></script>
+    <script type="text/javascript" src="floor.js"></script>
+    <script type="text/javascript" src="user.js"></script>
+    <script type="text/javascript" src="elevator.js"></script>
+    <script type="text/javascript" src="interfaces.js"></script>
+    <script type="text/javascript" src="world.js"></script>
+    <script type="text/javascript" src="presenters.js"></script>
+    <script type="text/javascript" src="challenges.js"></script>
+    <script type="text/javascript" src="fitness.js"></script>
+    <script type="text/javascript" src="app.js"></script>
+
+
+    <script type="text/template" id="user-template">
+        <i class="movable fa user fa-{u.displayType} {state}"></i>
+    </script>
+
+    <script type="text/template" id="floor-template">
+        <div class="floor" style="top: {yPosition}px">
+            <span class="floornumber">{level}</span>
+            <span class="buttonindicator">
+                <i class="fa fa-arrow-circle-up up"></i>
+                <i class="fa fa-arrow-circle-down down"></i>
+            </span>
+        </div>
+    </script>
+
+    <script type="text/template" id="elevator-template">
+        <div class="elevator movable" style="width: {e.width}px">
+            <span class="directionindicator directionindicatorup"><i class="fa fa-arrow-circle-up up activated"></i></span>
+            <span class="floorindicator"><span></span></span>
+            <span class="directionindicator directionindicatordown"><i class="fa fa-arrow-circle-down down activated"></i></span>
+            <span class="buttonindicator"></span>
+        </div>
+    </script>
+
+    <script type="text/template" id="elevatorbutton-template">
+        <span class="buttonpress">{floorNum}</span>
+    </script>
+
+    <script type="text/template" id="feedback-template">
+        <div class="feedback">
+            <h2 class="emphasis-color">{title}</h2>
+            <p class="emphasis-color">{message}</p>
+            <a href="{url}" class="emphasis-color">Next challenge <i class="fa fa-caret-right blink" style="text-decoration: blink"></i></a>
+        </div>
+    </script>
+
+    <script type="text/template" id="challenge-template">
+        <div class="pull-right">
+            <button class="right startstop unselectable" style="width: 110px">{startButtonText}</button>
+            <h3 class="right">
+                <i class="fa fa-minus-square timescale_decrease unselectable"></i>
+                <span class="emphasis-color" style="display: inline-block; width: 36px; text-align: center">{timeScale}</span>
+                <i class="fa fa-plus-square timescale_increase unselectable"></i>
+            </h3>
+        </div>
+    </script>
+
+    <script type="text/template" id="codestatus-template">
+        <h5 class="error" style="display: {errorDisplay}"><i class="fa fa-warning error-color"></i> There is a problem with your code: {errorMessage}</h5>
+    </script>
+
+    <script type="text/plain" id="default-elev-implementation">
+{
+    init: function(elevators, floors) {
+        var elevator = elevators[0]; // Let's use the first elevator
+
+        // Whenever the elevator is idle (has no more queued destinations) ...
+        elevator.on("idle", function() {
+            // let's go to all the floors (or did we forget one?)
+            elevator.goToFloor(0);
+            elevator.goToFloor(1);
+        });
+    },
+    update: function(dt, elevators, floors) {
+        // We normally don't need to do anything here
+    }
+}
+    </script>
+    <script type="text/plain" id="devtest-elev-implementation">
+{
+    init: function(elevators, floors) {
+        var selectElevatorForFloorPickup = function(floorNum) {
+            return _.max(elevators, function(e) {
+                return (_.contains(e.destinationQueue, floorNum) ? 4 : 0) +
+                    (-e.destinationQueue.length*e.destinationQueue.length) +
+                    (-e.loadFactor()*e.loadFactor() * 3);
+            });
+        };
+
+        _.each(floors, function(floor) {
+            floor.on("down_button_pressed up_button_pressed", function() {
+                var elevator = selectElevatorForFloorPickup(floor.level);
+                if(!_.contains(elevator.destinationQueue, floor.level)) {
+                    elevator.goToFloor(floor.level);
+                }
+            });
+        });
+        _.each(elevators, function(elevator) {
+            elevator.on("floor_button_pressed", function(floorNum) {
+                elevator.goToFloor(floorNum);
+            });
+            elevator.on("idle", function() {
+                elevator.goToFloor(0);
+            });
+        });
+    },
+    update: function(dt, elevators, floors) {
+    }
+}
+    </script>
+
+
+</head>
+<body>
+    <noscript>
+        <h2>Your browser does not appear to support JavaScript. This page contains a browser-based programming game implemented in JavaScript.</h2>
+    </noscript>
+    <ul class="nav nav-tabs">
+        <li role="presentation" class="active text-center" style="width:50%;"><a href="#report" data-toggle="tab">Report</a></li>
+        <li role="presentation" class="text-center" style="width:50%;"><a href="#simulator" data-toggle="tab">Demo</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active" id="report" style="color: #333 !important">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2 well well-sm">
+                        <div class="row">
+                            <div class="col-md-12" style="text-align: justify;">
+                                <div class="header text-center">
+                                    <h1><b>Smart Elevator Saga</b></h1>
+                                </div>
+                                <h3>Final project by Eran Nussinovitch, Gregory Pasternak, Asaph Shamir</h3>
+                                <hr style="border-top: 1px solid #999;">
+                                <a target="_blank" href="/static/report.pdf"><button class="btn btn-primary">Download PDF Report</button></a>
+                                <hr style="border-top: 1px solid #999;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h2>I. Introduction</h2>
+                                        <p>
+                                            Elevators are one of the most used means of transport for both people and goods. Elevators were initially operated manually by a dedicated person which was always present in the elevator. Today, elevators are operated by a controller, which given the pressed buttons in the elevator and the different floors uses some algorithm to decide where the elevator will go. A particularly bad example of such mechanism can be found in the Rothberg B building.
+                                        </p>
+                                        <p>
+                                            In this project we will use artificial intelligence to try and create a better controller.
+                                        </p>
+                                        <h2>II. Approach and Method</h2>
+                                        <p>
+                                            The automation of elevators presents a problem. Many users (passengers) are requesting use of the same resource (elevator), and all are seeking to minimize their wait time. A good controller will give an overall low wait times. In this project we use different approaches, Reinforcement Learning (RL) and Adversarial Search (AS), to model the controller. We evaluate the performance of each approach and compare them.
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <img src="/static/images/screenshot.png" alt="">
+                                        <p class="text-center">Elevator Saga game</p>
+                                    </div>
+                                </div>
+                                <p>
+                                    Reinforcement Learning models the controller as an agent operating within a world. Agent types compared are Q learning, deep Q learning and Multi Agent. Adversarial Search models the problem as a two player game, the elevator agent vs. the world. The agent types compared in AS are Reflex, Alpha-Beta, and Expectimax.
+                                </p>
+                                <p>
+                                    The platform on which we train and test our agent is the <a target="_blank" href="http://play.elevatorsaga.com/">ElevatorSaga</a> challenge. It is a coding game, which simulates a building with an arbitrary number of floors and elevators. The player's goal is to code the algorithm that decides the elevators actions. Instead of writing explicit code, we train different agents to control the elevators.
+                                </p>
+                                <p>
+                                    Finally, we will also compare our agents to some explicit algorithms: random agent, Shabat elevator, and a hand crafted solution to the ElevatorSaga game, taken from
+                                    ElevatorSaga <a target="_blank" href="https://github.com/magwo/elevatorsaga/wiki/Solutions">wiki</a>.
+                                </p>
+                                <hr style="border-top: 1px solid #999;">
+                                <h2>Results</h2>
+                                <p>Complete list of results for all agents and three buildings:
+                                    <ul>
+                                    <li>3 floors, 1 elevator (3F-1E)</li>
+                                    <li>7 floors, 1 elevator (7F-1E)</li>
+                                    <li>7 floors, 2 elevator (7F-2E)</li>
+                                </ul>Best results are marked with bold font, second best results are highlighted in yellow</p>
+                                <p class="text-center">
+                                    <table border="1">
+                                        <thead>
+                                            <tr>
+                                                <th>Agent</th><th colspan="2">3F-1E</th><th colspan="2">7F-1E</th><th colspan="2">7F-2E</th>
+                                            </tr>
+                                            <tr>
+                                                <th></th><th>Average</th><th>Max</th><th>Average</th><th>Max</th><th>Average</th><th>Max</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>Random</td><td>11.28</td><td>54.0</td><td>1681.05</td><td>4670.0</td><td>64.52</td><td>239.0</td></tr>
+                                            <tr><td>Shabat</td><td>6.72</td><td><span style="background-color: yellow">14.4</span></td><td>20.64</td><td>95.6</td><td>13.86</td><td>29.3</td></tr>
+                                            <tr><td>Reflex</td><td>5.93</td><td>37.7</td><td>14.9</td><td>159.3</td><td>7.37</td><td>37.0</td></tr>
+                                            <tr><td>α-β Pruning Depth 2</td><td>6.33</td><td>55.7</td><td>14.79</td><td>154.1</td><td>-</td><td>-</td></tr>
+                                            <tr><td>α-β Pruning Depth 3</td><td>7.03</td><td>40.8</td><td>15.8</td><td>-</td><td>-</td><td>-</td></tr>
+                                            <tr><td>Expectimax Depth 2</td><td>5.58</td><td>34.0</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                                            <tr><td>Multi Agent</td><td>-</td><td>-</td><td>-</td><td>-</td><td>7.00</td><td><span style="background-color: yellow">24.6</span></td></tr>
+                                            <tr><td>Deep Q</td><td>5.56</td><td>31.2</td><td>12.19</td><td>92.2</td><td><span style="background-color: yellow">6.84</span></td><td>27.5</td></tr>
+                                            <tr><td>Q Learning</td><td><span style="background-color: yellow">5.42</span></td><td>22.8</td><td><span style="background-color: yellow">11.86</span></td><td><span style="background-color: yellow">79.5</span></td><td>-</td><td>-</td></tr>
+                                            <tr><td>Hand Crafted</td><td><b>5.3</b></td><td><b>14.3</b></td><td><b>10.4</b></td><td><b>38.2</b></td><td><b>5.5</b></td><td><b>16.2</b></td></tr>
+                                        </tbody>
+                                    </table>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div role="tabpanel" class="tab-pane" id="simulator">
+            <div class="container" id="container">
+                <label for="chooseChallenge" style="color: black; font-weight: 500; font-size: 16pt;">
+                    Select Challenge:
+                    <select name="chooseChallenge" id="chooseChallenge">
+                        <option value="1">3 floors, 1 elevator</option>
+                        <option value="2">7 floors, 1 elevator</option>
+                        <option value="3">7 floors, 2 elevators</option>
+                    </select>
+                </label>
+                <label for="chooseBestAgent" id="chooseBestAgentLabel" style="color: black; font-weight: 500; font-size: 16pt;">
+                    Select Pretrained Agent:
+                    <select name="chooseBestAgent" id="chooseBestAgent">
+                    </select>
+                </label>
+
+                <label class="label label-success" style="font-size: 14pt;" id="bestAgentLoaded">Loading...</label>
+
+                <label for="advanced" class="pull-right">
+                    <input type="checkbox" class="btn btn-primary" name="advanced" id="advanced"> Advanced mode
+                </label>
+
+                <div class="challenge" style="height: 40px;">
+                </div>
+
+                <div class="world">
+                    <div class="feedbackcontainer"></div>
+                    <div class="innerworld">
+                    </div>
+                    <div class="statscontainer">
+                        <div style="top: 20px"><span class="key">Transported</span><span class="value transportedcounter"></span></div>
+                        <div style="top: 40px"><span class="key">Elapsed time</span><span class="value elapsedtime"></span></div>
+                        <div style="top: 60px"><span class="key">Transported/s</span><span class="value transportedpersec"></span></div>
+                        <div style="top: 80px"><span class="key">Avg waiting time</span><span class="value avgwaittime"></span></div>
+                        <div style="top: 100px"><span class="key">Max waiting time</span><span class="value maxwaittime"></span></div>
+                        <div style="top: 120px"><span class="key" title="Number of floors that have been travelled by elevators">Moves</span><span class="value movecount"></span></div>
+                    </div>
+                </div>
+
+                <div class="codestatus"></div>
+                <span id="save_message" style="float: right"></span>
+                <span id="fitness_message" style="float: right"></span>
+                <div style="clear:both;"></div>
+
+                <div class="row" id="agentSelection" style="margin-bottom: 10px;">
+                    <div class="col-md-12">
+                    Agent type:
+                        <select name="agentType" id="agentType">
+                            <option value="random">Random</option>
+                            <option value="shabbat">Shabat</option>
+                            <option value="qLearning">Q Learning</option>
+                            <option value="reflex">Reflex</option>
+                            <option value="minimax">Minimax</option>
+                            <option value="abprune">Alpha-Beta Pruning</option>
+                            <option value="expectimax">Expectimax</option>
+                            <option value="multiAgent">Multi Agent</option>
+                            <option value="deepQAgent">Deep Q Learning Agent</option>
+                            <option value="policyGrad">Policy Gradient Agent</option>
+                        </select>
+
+                        <input type="number" value="2" step="1" id="searchDepth">
+
+                        <select name="experiment" id="experiment" style="max-width: 200px;">
+                            <option value="">Choose experiment</option>
+                        </select>
+
+                        <button id="loadModel">Load model</button>
+
+                        <button id="trainMore">Train</button>
+                        <button id="stopTraining">Stop training</button>
+                        Trained for <label id="trained"></label> episodes
+                        <button id="test" class="pull-right">Test (20 runs)</button>
+                    </div>
+                </div>
+
+                <div class="row" id="hyperparams">
+                    <div class="col-md-3">
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="alpha">Alpha:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="alpha" value="0.5" step="0.05" style="width: 80px;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="epsilon">Epsilon:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="epsilon" value="0.5" step="0.05" style="width: 80px;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="gamma">Gamma:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="gamma" value="0.9" step="0.05" style="width: 80px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="trainIter">Training Eps:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="trainIter" value="35000" step="100" style="width: 80px;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="exploreIter">Exploration Eps:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="exploreIter" value="30000" step="100" style="width: 80px;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="iterPerEp">Iters/Episode:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="iterPerEp" value="300" step="1" style="width: 80px;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="spawnFactor">Spawn factor:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="spawnFactor" value="0.4" step="1" style="width: 80px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="rewardInside">inside:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="rewardInside" value="-1.0" step="0.1" style="width: 80px;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="rewardOutside">outside:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="rewardOutside" value="-1.0" step="0.1" style="width: 80px;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-6 control-label" for="rewardMovement">movement:</label>
+                                <div class="col-md-6">
+                                    <input class="form-control" type="number" id="rewardMovement" value="-0.5" step="0.1" style="width: 80px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="plots"></div>
+
+                <div id="logs">
+                    Logs: <br>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label id="simlogs"></label>
+                        </div>
+                        <div class="col-md-6">
+                            <label id="agentlogs"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
