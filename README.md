@@ -43,6 +43,8 @@ wiki
 
 ## Problem Description
 ### Problem Definition
+An ElevatorSaga challenge simulates a building with floors and elevators (Figure 1). Users spawn on different floors, each user has a destination floor he/ she wishes to go to. Each floor has an up button and a down button, users can press the up/ down button signaling that their destination floor is above/ below the current floor (the bottom floor and the top floor have only an up/ down button respectively). The elevators may move to any floor (including the floor they're on). Upon reaching a floor the elevator stops, and all the users in the elevator whose destination floor is the cur-rent floor will exit. Any user waiting at that floor will enter the elevator if there is room. 
+![](https://github.com/ednussi/3deception/blob/master/display/figure1.PNG)
 ### Complexity Analysis
 ### Evaluation & Metrics
 
