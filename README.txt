@@ -1,3 +1,50 @@
+# ElevatorSaga
+
+## Reinforcement learning control agent for Elevators, focusing on minimizing average wait time and maximizing throuput in a large stochastic enviorment
+
+By: Eran Nussinovitch, Gregory Pasternak, Asaph Shamir
+
+## Introduction
+Elevators are one of the most used means of transport for
+both people and goods. Elevators were initially operated manually
+by a dedicated person which was always present in the
+elevator. Today, elevators are operated by a controller, which
+given the pressed buttons in the elevator and the different
+floors uses some algorithm to decide where the elevator will
+go. A particularly bad example of such mechanism can be
+found in the Rothberg B building.
+
+The automation of elevators presents a problem. Many users
+(passengers) are requesting use of the same resource (elevator),
+and all are seeking to minimize their wait time. A good
+controller will give an overall low wait times. In this project
+we use different approaches, Reinforcement Learning (RL)
+and Adversarial Search (AS), to model the controller. We
+evaluate the performance of each approach and compare them.
+
+Reinforcement Learning models the controller as an agent
+operating within a world. Agent types compared are Q learning,
+deep Q learning and Multi Agent. Adversarial Search
+models the problem as a two player game, the elevator agent
+vs. the world. The agent types compared in AS are Reflex, Alpha-
+Beta, and Expectimax.
+
+The platform on which we train and test our agent is the
+ElevatorSaga1 challenge. It is a coding game, which simulates
+a building with an arbitrary number of floors and elevators.
+The player's goal is to code the algorithm that decides the elevators
+actions. Instead of writing explicit code, we train different
+agents to control the elevators.
+
+Finally, we will also compare our agents to some explicit
+algorithms: random agent, Shabat elevator, and a hand crafted
+solution to the ElevatorSaga game, taken from ElevatorSaga
+wiki
+
+## Problem Description
+### Problem Definition
+### Complexity Analysis
+### Evaluation & Metrics
 
 How To Run:
 
