@@ -187,15 +187,15 @@ Testing was performed by running the ElevatorSaga game for 10,000 time steps (un
 
 Comparison of average wait times and maximal wait times of different agents for 3 floors 1 elevator (3F-1E) is presented in Figure 2, comparison for 7 floors 1 elevator (7F-1E) in Figure 3, and for 7 floors 2 elevators (7F-2E) in Figure 4. In figures 3 and 4 the random agent is omitted for presentation purposes, as its wait times are 2 orders of magnitude larger than the other agents. Table 1 summarizes all the results including the random agent.
 
-![](https://github.com/ednussi/3deception/blob/master/display/figure1.PNG)
+![](https://github.com/ednussi/ElevatorSaga/blob/master/display/figure2.PNG)
 
 Figure 2:  Comparison of average and maximal wait times for the 3 floors, 1 elevator scenario.
 
-![](https://github.com/ednussi/3deception/blob/master/display/figure1.PNG)
+![](https://github.com/ednussi/ElevatorSaga/blob/master/display/figure3.PNG)
 
 Figure 3:   Comparison of average and maximal wait times for the 7 floors, 1 elevator scenario
 
-![](https://github.com/ednussi/3deception/blob/master/display/figure1.PNG)
+![](https://github.com/ednussi/ElevatorSaga/blob/master/display/figure4.PNG)
 
 Figure 4:   Comparison of average and maximal wait times for the 7 floors, 2 elevator scenario.
 
@@ -218,13 +218,13 @@ Once the number of floors is increased to 7, the Shabat agent maximal wait time 
 ### Rewards Effect
 The reward system for Q learning can change the performance of the agent dramatically. Initially the only reward was # 𝑢𝑠𝑒𝑟𝑠 𝑖𝑛 𝑡ℎ𝑒 𝑤𝑜𝑟𝑙𝑑 × −1. However, agents trained with this reward made a lot of redundant actions, moving the elevator to floors were no user got on or off. To discourage this we added the movement penalty. This caused the agent not to move the elevator at all, because the weight of this penalty was too high. Later the weight of the movement penalty was set such that the agent should always gain from moving the elevator to let a user exit. Still, this meant that the agent is "allowed" to make unnecessary stops. Finally, we added the special penalties for empty and full elevators. An empty elevator should never move to a floor without users waiting, and a full elevator should always go to a destination floor of one of the users inside it. By penalizing "wrong" actions heavily we discourage the agent from making these bad moves. This specific reward system can be considered as kind of implicit programming. Instead of programming the controller directly to address those cases, we penalize the agent and let it learn what to avoid. 
 
-![](https://github.com/ednussi/3deception/blob/master/display/figure1.PNG)
+![](https://github.com/ednussi/ElevatorSaga/blob/master/display/figure5.PNG)
 
 Figure 5:   # of state-action pairs seen by a Qlearning agent as a function of the number of episodes in the 7F-1E scenario.
 
 As mentioned above, during training the Q-learning agent encounters only a portion of all possible states. In the case of 7F-1E (using the unified "call elevator" button) the state action space size is approximately 1.6 ⋅ 10^6 . However, looking at Figure 5, we can see that the actual number of state actions the agent sees tends to 5 ⋅ 10^5 , less than half the possible number or state action pairs. This is the case despite high exploration rates during training. One reason for the discrepancy is that we count impossible states when calculating the state space size. A state where the elevator is on the 2nd floor, and the 2nd floor button in the elevator is pressed cannot happen in our simulator, however it is still counted. Another reason might be that the simulator requires longer episodes with higher spawn rates in order to see states with many users in the world, meaning these states have low probability to be seen in the state distribution of our simulator. Therefore, our agent doesn't encounter them.
 
-![](https://github.com/ednussi/3deception/blob/master/display/figure1.PNG)
+![](https://github.com/ednussi/ElevatorSaga/blob/master/display/figure6.PNG)
 
 Figure 6:    Average sum of rewards during training of Q learning agent for the 7F-1E scenario. # 𝑡𝑟𝑎𝑖𝑛𝑖𝑛𝑔 𝑒𝑝𝑖𝑠𝑜𝑑𝑒𝑠 = 45,000 , 𝑁𝑒𝑥𝑝 = 40,000 , 𝜖 = 0.5, 𝛼 = 0.5, 𝛾 = 0.9
 
@@ -235,6 +235,6 @@ We have presented a comparison of different approaches to implement an elevator 
 
 As an experiment it was interesting to compare the performance of RL methods to other, and although RL gave good results better performance can be achieved by using a relatively simple algorithm. We therefore conclude that the controller algorithm in Rothberg building B needs to be replaced. 
 
-![](https://github.com/ednussi/3deception/blob/master/display/figure1.PNG)
+![](https://github.com/ednussi/ElevatorSaga/blob/master/display/table1.PNG)
 
 Figure 6:    Complete list of results for all agents and all scenarios. Best results are marked with bold font, second best results are highlighted 
