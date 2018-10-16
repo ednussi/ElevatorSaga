@@ -74,9 +74,27 @@ All of the above gives us a state space of size:
 <a href="https://www.codecogs.com/eqnedit.php?latex=2^{(2&plus;M)\cdot&space;(N-1)}&space;\cdot&space;N^{M}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{(2&plus;M)\cdot&space;(N-1)}&space;\cdot&space;N^{M}" title="2^{(2+M)\cdot (N-1)} \cdot N^{M}" /></a>
 
 #### Action space
+Each elevator can go to any floor, including to stay on the floor it is on right now, resulting in <a href="https://www.codecogs.com/eqnedit.php?latex=2^{N-1}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?N^{M}" title="N^{M}" /></a> possible actions
+
 #### State-Action space
+Considering all the possible states and actions, the full space size is:
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=2^{(2&plus;M)\cdot&space;(N-1)}&space;\cdot&space;N^{M}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{(2&plus;M)\cdot&space;(N-1)}&space;\cdot&space;N^{2M}" title="2^{(2+M)\cdot (N-1)} \cdot N^{2M}" /></a>
+
+The size of the state-action space is exponential in both the number of floors and the number of elevators, and is the main obstacle for our agents. For example, Rothberg building B front side has 2 elevators, each of them can reach 7 floors (- 2, -1 and 1 through 5) giving a state-action space of size ≈ <a href="https://www.codecogs.com/eqnedit.php?latex=2^{M}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{35}" title="2^{35}" /></a>
 
 ### Evaluation & Metrics
+We define the wait time of a user as the time passed since the user spawned until the user exits an elevator at the destination floor. Two metrics are used in our evaluation:
+* Average user wait time
+* Maximal user wait time 
+Average wait time reflects overall model performance, while maximal wait time shows fairness of the model. If a model shows significantly higher maximal wait times, it means there were users that experience starvation, which should be avoided.
+
+### Scenrios 
+We tested our agents on three scenarios (buildings):
+* 3 floors, 1 elevator
+* 7 floors, 1 elevator
+* 7 floors, 2 elevators (Rothberg building B)
+
 ## Solution Approaches
 
 How To Run:
