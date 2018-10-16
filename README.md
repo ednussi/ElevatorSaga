@@ -49,9 +49,13 @@ An ElevatorSaga challenge simulates a building with floors and elevators (Figure
 Figure 1: Example of an ElevatorSaga challenge with 8 floors and 2 elevators. The down button on the 5th floor is pressed. The 7th floor button in the second elevator is pressed.
 
 We begin the formalization of the elevator saga game by defining:
+
 <a href="https://www.codecogs.com/eqnedit.php?latex=|FLOORS|=N,&space;|ELEVATORS|=M" target="_blank"><img src="https://latex.codecogs.com/gif.latex?|FLOORS|=N,&space;|ELEVATORS|=M" title="|FLOORS|=N, |ELEVATORS|=M" /></a>
+
 In each run of the simulator there is a spawn factor 𝑝𝑠 governing the generation of new users. In every time step, a user is generated with probability 𝑝𝑠. The probability for creating a user in a certain floor is: 
+
 <a href="https://www.codecogs.com/eqnedit.php?latex=p(floor)=\left\{\begin{matrix}&space;\frac{1}{2}&plus;\frac{\frac{1}{2}}{N}&space;&&space;,floor=0\\&space;\frac{\frac{1}{2}}{N}&space;&&space;,floor>0&space;\end{matrix}\right." target="_blank"><img src="https://latex.codecogs.com/gif.latex?p(floor)=\left\{\begin{matrix}&space;\frac{1}{2}&plus;\frac{\frac{1}{2}}{N}&space;&&space;,floor=0\\&space;\frac{\frac{1}{2}}{N}&space;&&space;,floor>0&space;\end{matrix}\right." title="p(floor)=\left\{\begin{matrix} \frac{1}{2}+\frac{\frac{1}{2}}{N} & ,floor=0\\ \frac{\frac{1}{2}}{N} & ,floor>0 \end{matrix}\right." /></a>
+
 Meaning most users spawn at floor 0. If a user spawns at floor 0 its destination floor is randomly sampled out of {1, … , 𝑁 −1}. Otherwise 90% of the time the user destination floor is 0, and 10% of the time it is randomly selected out of the other floors. Each elevator has a maximum capacity. In our scenarios all elevators capacities were set to 4. An elevator with 4 users inside is full, and floor users cannot enter the elevator until users inside the elevator exit.
 
 ### Complexity Analysis
@@ -60,7 +64,9 @@ We use a realistic approach, in which our agent only sees information available 
 Within every elevator, each floor button could be pressed or not, beside the floor the elevator is currently in, giving 2 (𝑁−1) cases for each elevator. In total: <a href="https://www.codecogs.com/eqnedit.php?latex=(2^{N-1})^{M}=2^{M(N-1)}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?(2^{N-1})^{M}=2^{M(N-1)}" title="(2^{N-1})^{M}=2^{M(N-1)}" /></a>. Each elevator can be in any given floor so we have <a href="https://www.codecogs.com/eqnedit.php?latex=2^{N-1}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{N-1}" title="N^{M}" /></a> combinations for locations. In addition, the load factor of each elevator is represented as a single Boolean giving in total <a href="https://www.codecogs.com/eqnedit.php?latex=2^{N-1}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{M}" title="2^{M}" /></a> cases.
 
 All of the above gives us a state space of size:
+
 <a href="https://www.codecogs.com/eqnedit.php?latex=2^{(2&plus;M)\cdot&space;(N-1)}&space;\cdot&space;N^{M}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{(2&plus;M)\cdot&space;(N-1)}&space;\cdot&space;N^{M}" title="2^{(2+M)\cdot (N-1)} \cdot N^{M}" /></a>
+
 #### Action space
 #### State-Action space
 
