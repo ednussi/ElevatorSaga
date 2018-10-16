@@ -5,41 +5,15 @@
 By: Eran Nussinovitch, Gregory Pasternak, Asaph Shamir
 
 ## I. Introduction
-Elevators are one of the most used means of transport for
-both people and goods. Elevators were initially operated manually
-by a dedicated person which was always present in the
-elevator. Today, elevators are operated by a controller, which
-given the pressed buttons in the elevator and the different
-floors uses some algorithm to decide where the elevator will
-go. A particularly bad example of such mechanism can be
-found in the Rothberg B building.
+Elevators are one of the most used means of transport for both people and goods. Elevators were initially operated manually by a dedicated person which was always present in the elevator. Today, elevators are operated by a controller, which given the pressed buttons in the elevator and the different floors uses some algorithm to decide where the elevator will go. A particularly bad example of such mechanism can be found in the Rothberg B building.
 
-The automation of elevators presents a problem. Many users
-(passengers) are requesting use of the same resource (elevator),
-and all are seeking to minimize their wait time. A good
-controller will give an overall low wait times. In this project
-we use different approaches, Reinforcement Learning (RL)
-and Adversarial Search (AS), to model the controller. We
-evaluate the performance of each approach and compare them.
+The automation of elevators presents a problem. Many users (passengers) are requesting use of the same resource (elevator), and all are seeking to minimize their wait time. A good controller will give an overall low wait times. In this project we use different approaches, Reinforcement Learning (RL) and Adversarial Search (AS), to model the controller. We evaluate the performance of each approach and compare them.
 
-Reinforcement Learning models the controller as an agent
-operating within a world. Agent types compared are Q learning,
-deep Q learning and Multi Agent. Adversarial Search
-models the problem as a two player game, the elevator agent
-vs. the world. The agent types compared in AS are Reflex, Alpha-
-Beta, and Expectimax.
+Reinforcement Learning models the controller as an agent operating within a world. Agent types compared are Q learning, deep Q learning and Multi Agent. Adversarial Search models the problem as a two player game, the elevator agent vs. the world. The agent types compared in AS are Reflex, Alpha-Beta, and Expectimax.
 
-The platform on which we train and test our agent is the
-ElevatorSaga1 challenge. It is a coding game, which simulates
-a building with an arbitrary number of floors and elevators.
-The player's goal is to code the algorithm that decides the elevators
-actions. Instead of writing explicit code, we train different
-agents to control the elevators.
+The platform on which we train and test our agent is the [ElevatorSaga challenge](https://play.elevatorsaga.com/). It is a coding game, which simulates a building with an arbitrary number of floors and elevators. The player's goal is to code the algorithm that decides the elevators actions. Instead of writing explicit code, we train different agents to control the elevators.
 
-Finally, we will also compare our agents to some explicit
-algorithms: random agent, Shabat elevator, and a hand crafted
-solution to the ElevatorSaga game, taken from ElevatorSaga
-wiki
+Finally, we will also compare our agents to some explicit algorithms: random agent, Shabat elevator, and a hand crafted solution to the ElevatorSaga game, taken from ElevatorSaga .iki
 
 ## II. Problem Description
 ### Problem Definition
@@ -152,7 +126,7 @@ Note: when a passenger arrives to its destination, he is immediately removed fro
 ## Implementation Details
 ### Reinforcement Learning Agents
 
- All training was performed in episodes. Each episode started from an empty world and runs for 300 iterations (during training iterations are game steps, a single game step comprises of an action taken by the agent, and the world's reaction to that action). In each episode the spawn factor was randomly chosen from the segment [0.4, 0.65]. The number of training episodes varied, but was no less than 30,000 and no more than 100,0002 . We used another parameter 𝑁𝑒𝑥𝑝 to set the number of episodes during which exploration occurs. The exploration is linearly decreased during the exploration episodes from its initial value until it reaches 0 after 𝑁𝑒𝑥𝑝 episodes. After the exploration phase, the exploration rate stays 0 for the rest of the training. Different exploration ( 𝜖 ), discount (𝛾) , and learning (𝛼) rates was used. Best results were achieved by setting initial values 𝛼 = 0.5, 𝜖 = 0.5, 𝛾 = 0.9. We used exponential decrease for the learning rate and linear decrease for the exploration rate. The discount rate is constant.
+ All training was performed in episodes. Each episode started from an empty world and runs for 300 iterations (during training iterations are game steps, a single game step comprises of an action taken by the agent, and the world's reaction to that action). In each episode the spawn factor was randomly chosen from the segment [0.4, 0.65]. The number of training episodes varied, but was no less than 30,000 and no more than 100,000 (40,000 training episodes took ~20 minutes for Q learning and ~60 minutes for deep Q learning). We used another parameter 𝑁𝑒𝑥𝑝 to set the number of episodes during which exploration occurs. The exploration is linearly decreased during the exploration episodes from its initial value until it reaches 0 after 𝑁𝑒𝑥𝑝 episodes. After the exploration phase, the exploration rate stays 0 for the rest of the training. Different exploration ( 𝜖 ), discount (𝛾) , and learning (𝛼) rates was used. Best results were achieved by setting initial values 𝛼 = 0.5, 𝜖 = 0.5, 𝛾 = 0.9. We used exponential decrease for the learning rate and linear decrease for the exploration rate. The discount rate is constant.
 
 
 1. Q learing Agent
@@ -162,7 +136,7 @@ We used our implementation - of the naive Q learning algorithm.
 Given a scenario with 2 elevators, each elevator is a separate Q-learning agent. The two agents share the Q table. During training both update the same Q table (this also "halves" the learning time required to achieve good results). During testing each agent operates independently from the other. To allow some "cooperation" between the agents, the state was expanded to include the location of the other elevator.
 
 3. Deep Q-learing Agent
-This variant replaces the discrete Q table with a parameterized Q value estimation function. Specifically, the estimation function used is modeled by a neural network. The network receives a pair of state action. The state is represented as a concatenation of binary vectors for each of the state properties (elevator location, buttons pressed, requested floors, etc...). The action is represented as a one hot vector of size # legal actions. The output of the network is a scalar representing the Q value of the input state action pair. For the case of 3 floors 1 elevator 2 fully connected (FC) hidden layers of size 256 was used. For 7 floors 1 elevators 2 FC hidden layers of size 512 was used. For 7 floors 2 elevators 3 FC hidden layers of size 512 was used. All the activations were Leaky Relu. A few different architectures were considered for each case, all gave similar results, the reported architectures gave the best performance. The networks were trained using ADAM optimizer with a learning rate of 5e-4. The exact deep Q learning algorithm can be found here3.
+This variant replaces the discrete Q table with a parameterized Q value estimation function. Specifically, the estimation function used is modeled by a neural network. The network receives a pair of state action. The state is represented as a concatenation of binary vectors for each of the state properties (elevator location, buttons pressed, requested floors, etc...). The action is represented as a one hot vector of size # legal actions. The output of the network is a scalar representing the Q value of the input state action pair. For the case of 3 floors 1 elevator 2 fully connected (FC) hidden layers of size 256 was used. For 7 floors 1 elevators 2 FC hidden layers of size 512 was used. For 7 floors 2 elevators 3 FC hidden layers of size 512 was used. All the activations were Leaky Relu. A few different architectures were considered for each case, all gave similar results, the reported architectures gave the best performance. The networks were trained using ADAM optimizer with a learning rate of 5e-4. The exact deep Q learning algorithm can be found [here](https://moodle2.cs.huji.ac.il/nu16/plugin-file.php/319819/mod_resource/con-tent/2/RL_APML_2017.pdf) (slide 23).
 
 ### Adversarial Search Agents
 
@@ -205,7 +179,7 @@ The poor performance of the Adversarial agents is caused by the real-time constr
 
 Interestingly, Alpha-Beta agent with depth 3 underperformed Alpha-Beta with depth 2. This, and the fact that Expectimax outperformed both Alpha-Beta agents seems reasonable when considering that the game's min player is random 100% of the time, which contradicts the basic assumption of the Alpha-Beta algorithm (playing against an optimal player). 
 
-The dominance of the hand crafted algorithm over RL agents can be attributed to three main reasons. First, the hand crafted algorithm uses information unavailable to the RL agents, as it sees the exact number of users both in the elevators and on the floors (the hand crafted algorithm was taken as is). Second, as will be discussed later, the reward system has a major influence over the RL agents' performance. It is possible that with further tinkering of the rewards the performance of RL agents would increase. This is especially noticeable when looking at the maximal waiting times. Our reward system has no reward that is directly connected to wait times. Using our current reward system an RL agent is implicitly trying to maximize throughput4 , which is directly related to average wait times, but not to maximal wait times. Adding a negative reward based on wait times is not possible however, since such reward will depend on previous states and therefore will break the Markovian assumption in RL. 
+The dominance of the hand crafted algorithm over RL agents can be attributed to three main reasons. First, the hand crafted algorithm uses information unavailable to the RL agents, as it sees the exact number of users both in the elevators and on the floors (the hand crafted algorithm was taken as is). Second, as will be discussed later, the reward system has a major influence over the RL agents' performance. It is possible that with further tinkering of the rewards the performance of RL agents would increase. This is especially noticeable when looking at the maximal waiting times. Our reward system has no reward that is directly connected to wait times. Using our current reward system an RL agent is implicitly trying to maximize throughput (Throughput is the ratio of users transported to time) , which is directly related to average wait times, but not to maximal wait times. Adding a negative reward based on wait times is not possible however, since such reward will depend on previous states and therefore will break the Markovian assumption in RL. 
 
 Lastly, during testing our Q-learning agent encounters states not seen before during training. This does not happen often, but every time it does the agent's best option is to randomly choose an action. Even with varying spawn factors and high exploration rates, the agent is not able to visit all the edge cases during training and therefore performs poorly when it encounters these edge cases during testing. The hand crafted algorithm on the other hand, does not need to be trained and handles all possible states through explicit logic, which even if not optimal is better than random choice. 
 
