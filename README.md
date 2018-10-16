@@ -4,7 +4,7 @@
 
 By: Eran Nussinovitch, Gregory Pasternak, Asaph Shamir
 
-## Introduction
+## I. Introduction
 Elevators are one of the most used means of transport for
 both people and goods. Elevators were initially operated manually
 by a dedicated person which was always present in the
@@ -41,9 +41,10 @@ algorithms: random agent, Shabat elevator, and a hand crafted
 solution to the ElevatorSaga game, taken from ElevatorSaga
 wiki
 
-## Problem Description
+## II. Problem Description
 ### Problem Definition
 An ElevatorSaga challenge simulates a building with floors and elevators (Figure 1). Users spawn on different floors, each user has a destination floor he/ she wishes to go to. Each floor has an up button and a down button, users can press the up/ down button signaling that their destination floor is above/ below the current floor (the bottom floor and the top floor have only an up/ down button respectively). The elevators may move to any floor (including the floor they're on). Upon reaching a floor the elevator stops, and all the users in the elevator whose destination floor is the cur-rent floor will exit. Any user waiting at that floor will enter the elevator if there is room. 
+
 ![](https://github.com/ednussi/3deception/blob/master/display/figure1.PNG)
 
 Figure 1: Example of an ElevatorSaga challenge with 8 floors and 2 elevators. The down button on the 5th floor is pressed. The 7th floor button in the second elevator is pressed.
@@ -87,6 +88,7 @@ The size of the state-action space is exponential in both the number of floors a
 We define the wait time of a user as the time passed since the user spawned until the user exits an elevator at the destination floor. Two metrics are used in our evaluation:
 * Average user wait time
 * Maximal user wait time 
+
 Average wait time reflects overall model performance, while maximal wait time shows fairness of the model. If a model shows significantly higher maximal wait times, it means there were users that experience starvation, which should be avoided.
 
 ### Scenrios 
@@ -95,7 +97,66 @@ We tested our agents on three scenarios (buildings):
 * 7 floors, 1 elevator
 * 7 floors, 2 elevators (Rothberg building B)
 
-## Solution Approaches
+## III. Solution Approaches
+### Reinforcement Learning
+Due to the Markovian nature of the world (past states are insignificant when deciding on an action), Value Estimation is the most natural go-to approach. However, our world is stochastic, and the agent doesn't know the probability function for state-action-state (we don’t know when and where users will be generated). This makes RL, and particularly Q-learning, a model-free agent, most suitable for this problem. Even though Q-learning is model free, it still suffers from the huge state-action space in this problem. To lessen this we unified the up and down buttons in each floor to a single "call elevator" button reducing the number of state by a factor of <a href="https://www.codecogs.com/eqnedit.php?latex=2^{M}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{N-2}" title="2^{N-2}" /></a>
+
+The space size is particularly problematic for the scenario with 7 floors and 2 elevators. The state-action space is so large that it is computationally impossible to use regular Qlearning. We therefore use two variations of Q-learning for this scenario: Deep-Q-learning using a neural network and Multi Agent Q learning (see IV for further details). 
+
+Lastly, an RL algorithm requires feedback from the environment. Since the ElevatorSaga game does not have rewards, we design a reward system that supports the training process of our algorithms. 
+
+The reward for a state-action-nextState triplet is made up of several parts:
+Let <a href="https://www.codecogs.com/eqnedit.php?latex=n_{i}^{exit}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{i}^{exit}" title="n_{i}^{exit}" /></a> be the number of users exiting elevator 𝑖 after it moved, then the reward for exiting users is:
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=r_{exit}=\sum_{i=1}^{M}n_{i}^{exit}\cdot&space;2" target="_blank"><img src="https://latex.codecogs.com/gif.latex?r_{exit}=\sum_{i=1}^{M}n_{i}^{exit}\cdot&space;2" title="r_{exit}=\sum_{i=1}^{M}n_{i}^{exit}\cdot 2" /></a>
+
+The movement penalty for each elevator is given by:
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=p_{i}^{move}=\left&space;(&space;\left&space;(&space;\left&space;(&space;a_i-l_i&space;\right&space;)&space;-1&space;\right&space;)&space;\cdot&space;0.3&space;&plus;&space;0.4&space;\right&space;)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?p_{i}^{move}=\left&space;(&space;\left&space;(&space;\left&space;(&space;a_i-l_i&space;\right&space;)&space;-1&space;\right&space;)&space;\cdot&space;0.3&space;&plus;&space;0.4&space;\right&space;)" title="p_{i}^{move}=\left ( \left ( \left ( a_i-l_i \right ) -1 \right ) \cdot 0.3 + 0.4 \right )" /></a>
+
+Where <a href="https://www.codecogs.com/eqnedit.php?latex=a_i" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a_i" title="a_i" /></a> is the floor elevator 𝑖 reached after moving, and <a href="https://www.codecogs.com/eqnedit.php?latex=a_i" target="_blank"><img src="https://latex.codecogs.com/gif.latex?l_i" title="l_i" /></a> is the floor it left. 
+
+The total movement penalty is:
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=p_{move}=\sum_{i=1}^{M}&space;p_{i}^{move}&space;\cdot&space;-\frac{1}{2}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?p_{move}=\sum_{i=1}^{M}&space;p_{i}^{move}&space;\cdot&space;-\frac{1}{2}" title="p_{move}=\sum_{i=1}^{M} p_{i}^{move} \cdot -\frac{1}{2}" /></a>
+
+The users' penalty is given by:
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=p_{users}=-1\cdot\left&space;(&space;\sum_{i=1}^{M}&space;n_{i}^{stay}&space;&plus;&space;min\left&space;(&space;M\cdot&space;C,&space;\sum_{j=1}^{N}&space;n_{j}^{wait}&space;\right&space;)\right&space;)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?p_{users}=-1\cdot\left&space;(&space;\sum_{i=1}^{M}&space;n_{i}^{stay}&space;&plus;&space;min\left&space;(&space;M\cdot&space;C,&space;\sum_{j=1}^{N}&space;n_{j}^{wait}&space;\right&space;)\right&space;)" title="p_{users}=-1\cdot\left ( \sum_{i=1}^{M} n_{i}^{stay} + min\left ( M\cdot C, \sum_{j=1}^{N} n_{j}^{wait} \right )\right )" /></a>
+
+Where <a href="https://www.codecogs.com/eqnedit.php?latex=n_{i}^{wait}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{i}^{stay}" title="n_{i}^{stay}" /></a> is the number of users still in elevator 𝑖 after it moved, 𝐶 is the capacity of the elevators and <a href="https://www.codecogs.com/eqnedit.php?latex=n_{i}^{wait}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{j}^{wait}" title="n_{j}^{wait}" /></a>  is the number of users waiting in floor j.
+
+Additionally, we have special penalties. Let 𝐹 be the set of floors with "call" buttons pressed. Let <a href="https://www.codecogs.com/eqnedit.php?latex=b_i" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b_i" title="b_i" /></a> be the set of buttons pressed in elevator 𝑖 (the floors requested by users in that elevator). Let <a href="https://www.codecogs.com/eqnedit.php?latex=n_{i}^{in}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?n_{i}^{in}" title="n_{i}^{in}" /></a> be the number of users in elevator 𝑖 before it moved. Then we have:
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=p_{i}^{full}=\left\{\begin{matrix}&space;-200&space;&&space;,n_{i}^{in}=C\wedge&space;a_i\notin&space;b_i&space;\\&space;0&space;&&space;,else&space;\end{matrix}\right." target="_blank"><img src="https://latex.codecogs.com/gif.latex?p_{i}^{full}=\left\{\begin{matrix}&space;-200&space;&&space;,n_{i}^{in}=C\wedge&space;a_i\notin&space;b_i&space;\\&space;0&space;&&space;,else&space;\end{matrix}\right." title="p_{i}^{full}=\left\{\begin{matrix} -200 & ,n_{i}^{in}=C\wedge a_i\notin b_i \\ 0 & ,else \end{matrix}\right." /></a>
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=p_{i}^{empty}=\left\{\begin{matrix}&space;-200&space;&&space;,n_{i}^{in}=0\wedge&space;a_i\notin&space;F&space;\wedge&space;F\neq&space;0&space;\\&space;0&space;&&space;,else&space;\end{matrix}\right." target="_blank"><img src="https://latex.codecogs.com/gif.latex?p_{i}^{empty}=\left\{\begin{matrix}&space;-200&space;&&space;,n_{i}^{in}=0\wedge&space;a_i\notin&space;F&space;\wedge&space;F\neq&space;0&space;\\&space;0&space;&&space;,else&space;\end{matrix}\right." title="p_{i}^{empty}=\left\{\begin{matrix} -200 & ,n_{i}^{in}=0\wedge a_i\notin F \wedge F\neq 0 \\ 0 & ,else \end{matrix}\right." /></a>
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=p_{i}^{bad}=\left\{\begin{matrix}&space;-100&space;&&space;,0<n_{i}^{in}<C\wedge&space;a_i\notin&space;F&space;\cup&space;b_i&space;\\&space;0&space;&&space;,else&space;\end{matrix}\right." target="_blank"><img src="https://latex.codecogs.com/gif.latex?p_{i}^{bad}=\left\{\begin{matrix}&space;-100&space;&&space;,0<n_{i}^{in}<C\wedge&space;a_i\notin&space;F&space;\cup&space;b_i&space;\\&space;0&space;&&space;,else&space;\end{matrix}\right." title="p_{i}^{bad}=\left\{\begin{matrix} -100 & ,0<n_{i}^{in}<C\wedge a_i\notin F \cup b_i \\ 0 & ,else \end{matrix}\right." /></a>
+
+The total reward is given by:
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=R&space;=&space;r_{exit}&space;&plus;&space;p_{move}&space;&plus;&space;p_{users}&space;&plus;&space;\sum_{i=1}^{M}&space;p_{i}^{full}&space;&plus;&space;p_{i}^{empty}&space;&plus;&space;p_{i}^{bad}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?R&space;=&space;r_{exit}&space;&plus;&space;p_{move}&space;&plus;&space;p_{users}&space;&plus;&space;\sum_{i=1}^{M}&space;p_{i}^{full}&space;&plus;&space;p_{i}^{empty}&space;&plus;&space;p_{i}^{bad}" title="R = r_{exit} + p_{move} + p_{users} + \sum_{i=1}^{M} p_{i}^{full} + p_{i}^{empty} + p_{i}^{bad}" /></a>
+
+The design of the reward system plays a major part in determining the performance of our agents, and is further discussed in VI.1.
+
+### Adversarial Search
+We note that this problem could be modeled as a 2-player game where the first (max) player is the elevator agent and the second player is the world. The world player always chooses an action by some stochastic process. Like Q-Learning, adversarial search agents suffer greatly from the state-action space size which translates directly to a very large branching factor. This limits greatly the depth to which an AS agent can go during runtime. The elevator should operate in real-time, i.e. the agent's computation time to decide on the next action should seem instantaneous to the user. 
+
+For AS agents, the utility of a state is computed using simple evaluation function (adversarialSearch.py:340):
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=u=\&hash;users\&space;outside\&space;the\&space;elevator&space;\cdot&space;(-1.1)&space;&plus;&space;\&hash;users\&space;inside\&space;the\&space;elevator&space;\cdot&space;(-1)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?u=\&hash;users\&space;outside\&space;the\&space;elevator&space;\cdot&space;(-1.1)&space;&plus;&space;\&hash;users\&space;inside\&space;the\&space;elevator&space;\cdot&space;(-1)" title="u=\#users\ outside\ the\ elevator \cdot (-1.1) + \#users\ inside\ the\ elevator \cdot (-1)" /></a>
+
+Note: when a passenger arrives to its destination, he is immediately removed from the world, and stops being counted in consecutive rewards
+
+## Implementation Details
+### Reinforcement Learning Agents
+1. A numbered list
+aba
+2. Which is numbered
+aba
+3. test
+aba
 
 How To Run:
 
